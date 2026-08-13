@@ -2,6 +2,7 @@ services:
   - type: web
     name: presensi-mokaku-fpmipa-2026
     runtime: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     envVars:
@@ -11,11 +12,3 @@ services:
         value: admin
       - key: ADMIN_PASSWORD
         value: Mokaku2026!
-      - key: DATABASE_URL
-        fromDatabase:
-          name: presensi-db
-          property: connectionString
-
-databases:
-  - name: presensi-db
-    plan: free
