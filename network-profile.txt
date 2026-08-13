@@ -1,0 +1,1 @@
+Get-NetConnectionProfile ^| Format-List Name,InterfaceAlias,NetworkCategory,IPv4Connectivity

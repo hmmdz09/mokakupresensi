@@ -1,0 +1,8 @@
+
+
+IPAddress      : 10.160.1.34
+PrefixLength   : 24
+InterfaceAlias : Wi-Fi
+
+
+

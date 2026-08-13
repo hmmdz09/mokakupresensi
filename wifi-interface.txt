@@ -1,0 +1,23 @@
+
+There is 1 interface on the system: 
+
+    Name                   : Wi-Fi
+    Description            : D-Link DWA-121 Wireless N 150 USB Adapter(rev.B)
+    GUID                   : d1f17162-1df7-4a5f-82ea-2fcb48d634cc
+    Physical address       : 18:0f:76:02:85:fe
+    State                  : connected
+    SSID                   : POCO F4
+    BSSID                  : 2e:6d:4d:74:16:8c
+    Network type           : Infrastructure
+    Radio type             : 802.11n
+    Authentication         : WPA3-Personal
+    Cipher                 : CCMP
+    Connection mode        : Profile
+    Channel                : 5
+    Receive rate (Mbps)    : 72.2
+    Transmit rate (Mbps)   : 72.2
+    Signal                 : 96% 
+    Profile                : POCO F4 
+
+    Hosted network status  : Not available
+

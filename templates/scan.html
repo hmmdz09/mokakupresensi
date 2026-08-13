@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Scanner QR{% endblock %}
+{% block head %}<script src="/static/html5-qrcode.min.js" defer></script>{% endblock %}
+{% block content %}
+<main class="main"><div class="container scanner">
+  <div class="page-head"><div><span class="eyebrow" style="color:var(--blue)">SCANNER ADMIN</span><h1 class="page-title">{{ 'Scanner Mahasiswa Baru' if session.audience == 'peserta' else 'Scanner Panitia' }}</h1></div><a class="btn ghost" href="/admin">Kembali</a></div>
+  <section class="card">
+    <div id="reader" class="scan-stage"><p id="cameraPrompt">Tekan tombol untuk mengaktifkan kamera.</p></div>
+    <div id="scanStatus" class="scan-status">Scanner belum aktif.</div>
+    <div class="actions"><button class="btn" id="startScan">Aktifkan Kamera</button><button class="btn danger" id="stopScan" hidden>Matikan Kamera</button></div>
+    <form class="manual" method="post" action="/admin/manual/{{ session.id }}"><input name="nim" inputmode="numeric" placeholder="Input NIM manual" required><button class="btn ghost">Catat Manual</button></form>
+  </section>
+</div></main>
+<div class="scan-modal" id="scanModal" hidden role="dialog" aria-modal="true" aria-labelledby="scanModalTitle">
+  <div class="scan-modal-card">
+    <div class="scan-modal-icon">✓</div>
+    <h2 id="scanModalTitle">Presensi berhasil</h2>
+    <p id="confirmMessage">Mahasiswa sudah tercatat hadir.</p>
+    <dl><div><dt>Nama</dt><dd id="confirmName">-</dd></div><div><dt id="confirmDetailLabel">Program Studi</dt><dd id="confirmProgram">-</dd></div></dl>
+    <button class="btn" id="confirmScan">OK</button>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const startBtn=document.querySelector('#startScan');
+const stopBtn=document.querySelector('#stopScan');
+const statusBox=document.querySelector('#scanStatus');
+const modal=document.querySelector('#scanModal');
+const confirmBtn=document.querySelector('#confirmScan');
+const confirmName=document.querySelector('#confirmName');
+const confirmProgram=document.querySelector('#confirmProgram');
+const confirmMessage=document.querySelector('#confirmMessage');
+const confirmDetailLabel=document.querySelector('#confirmDetailLabel');
+let scanner=null;
+let locked=false;
+function showConfirmation(data){
+  const isCommittee=data.role==='panitia';
+  confirmMessage.textContent=isCommittee?'Panitia sudah tercatat hadir.':'Mahasiswa sudah tercatat hadir.';
+  confirmDetailLabel.textContent=isCommittee?'Jabatan / Divisi':'Program Studi';
+  confirmName.textContent=data.name||'-';
+  confirmProgram.textContent=isCommittee?(data.committee_division||data.identity_detail||'-'):(data.study_program||data.identity_detail||'-');
+  modal.hidden=false;confirmBtn.focus();
+}
+function closeConfirmation(){modal.hidden=true;locked=false}
+confirmBtn.addEventListener('click',closeConfirmation);
+async function submitToken(token){
+  if(locked)return;
+  locked=true;
+  statusBox.className='scan-status';statusBox.textContent='Memproses QR...';
+  try{
+    const res=await fetch('/admin/api/scan/{{ session.id }}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});
+    const data=await res.json();
+    statusBox.className='scan-status '+(data.ok?'ok':'error');statusBox.textContent=data.message;
+    if(data.ok){if(navigator.vibrate)navigator.vibrate(140);showConfirmation(data)}else{setTimeout(()=>locked=false,1800)}
+  }catch(e){statusBox.className='scan-status error';statusBox.textContent='Gagal terhubung ke server.';setTimeout(()=>locked=false,1800)}
+}
+startBtn.addEventListener('click',async()=>{
+  if(!window.Html5Qrcode){statusBox.className='scan-status error';statusBox.textContent='Library scanner gagal dimuat. Gunakan input NIM manual.';return}
+  scanner=new Html5Qrcode('reader');
+  try{await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:230,height:230}},submitToken);startBtn.hidden=true;stopBtn.hidden=false;statusBox.textContent='Kamera aktif. Arahkan ke QR peserta.'}
+  catch(e){statusBox.className='scan-status error';statusBox.textContent='Kamera tidak dapat dibuka. Pastikan izin kamera diberikan dan situs menggunakan HTTPS/localhost.'}
+});
+stopBtn.addEventListener('click',async()=>{if(scanner)await scanner.stop();startBtn.hidden=false;stopBtn.hidden=true;statusBox.className='scan-status';statusBox.textContent='Scanner dimatikan.'});
+</script>
+{% endblock %}

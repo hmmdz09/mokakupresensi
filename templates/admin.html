@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Admin{% endblock %}
+{% block content %}
+<main class="main"><div class="container">
+<div class="page-head"><div><span class="eyebrow" style="color:var(--blue)">ADMIN</span><h1 class="page-title">Presensi MOKAKU Fakultas 2026</h1></div><div class="actions"><a class="btn" href="/admin/export-peserta.xlsx">Excel Peserta</a><a class="btn" href="/admin/export-panitia.xlsx">Excel Panitia</a></div></div>
+<div class="grid">
+<div class="card span-4 metric"><b>{{ user_count }}</b><span>Peserta terdaftar</span></div><div class="card span-4 metric"><b>{{ committee_count }}</b><span>Panitia terdaftar</span></div><div class="card span-4 metric"><b>{{ attendance_count }}</b><span>Kehadiran tercatat</span></div>
+<section class="card span-12"><h2>Scanner Kehadiran</h2><div class="session-list">{% for s in sessions %}<div class="session"><div class="session-info"><b>{{ 'Mahasiswa Baru' if s.audience == 'peserta' else 'Panitia' }}</b><span>{{ s.attendance_count }} hadir</span></div><div class="session-actions"><a class="btn" href="/admin/scan/{{ s.id }}">Buka Scanner</a></div></div>{% endfor %}</div></section>
+<section class="card span-12"><h2>Kehadiran Terbaru</h2><div class="table-wrap"><table><thead><tr><th>NIM</th><th>Nama</th><th>Waktu</th></tr></thead><tbody>{% for row in recent %}<tr><td>{{ row.nim }}</td><td>{{ row.name }}</td><td>{{ row.scanned_at[11:19] }}</td></tr>{% else %}<tr><td colspan="3">Belum ada kehadiran.</td></tr>{% endfor %}</tbody></table></div></section>
+</div></div></main>
+{% endblock %}

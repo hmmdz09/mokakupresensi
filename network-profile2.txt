@@ -1,0 +1,9 @@
+
+
+Name             : POCO F4
+InterfaceAlias   : Wi-Fi
+NetworkCategory  : Private
+IPv4Connectivity : Internet
+
+
+
