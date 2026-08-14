@@ -314,9 +314,9 @@ def admin_dashboard(request: Request):
     with db() as con:
         sessions = con.execute("""SELECT s.*,COUNT(a.id) attendance_count FROM sessions s
           LEFT JOIN attendance a ON a.session_id=s.id GROUP BY s.id ORDER BY s.session_date DESC,s.week DESC""").fetchall()
-        users = con.execute("SELECT COUNT(*) FROM users WHERE role='peserta'").fetchone()[0]
-        committee = con.execute("SELECT COUNT(*) FROM users WHERE role='panitia'").fetchone()[0]
-        total = con.execute("SELECT COUNT(*) FROM attendance").fetchone()[0]
+        users = con.execute("SELECT COUNT(*) AS total FROM users WHERE role='peserta'").fetchone()["total"]
+        committee = con.execute("SELECT COUNT(*) AS total FROM users WHERE role='panitia'").fetchone()["total"]
+        total = con.execute("SELECT COUNT(*) AS total FROM attendance").fetchone()["total"]
         recent = con.execute("""SELECT u.nim,u.name,s.name session_name,a.scanned_at FROM attendance a
           JOIN users u ON u.id=a.user_id JOIN sessions s ON s.id=a.session_id ORDER BY a.scanned_at DESC LIMIT 8""").fetchall()
     return render(request, "admin.html", sessions=sessions, user_count=users, committee_count=committee, attendance_count=total, recent=recent)
