@@ -4,3 +4,5 @@ __pycache__/
 .env
 presensi.db
 *.xlsx
+*.log
+tunnel_*

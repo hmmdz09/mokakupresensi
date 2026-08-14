@@ -25,6 +25,7 @@ DB_PATH = ROOT / "presensi.db"
 SECRET = os.environ.get("APP_SECRET", "dev-secret-ganti-saat-produksi")
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Mokaku2026!")
+COMMITTEE_ACCESS_TOKEN = os.environ.get("COMMITTEE_ACCESS_TOKEN", "PanitiaMokaku2026!")
 COMMITTEE_DIVISIONS = (
     "Penanggung Jawab", "Steering Committee", "Ketua Pelaksana",
     "Wakil Ketua Pelaksana", "Bendahara", "DPM", "Divisi Acara",
@@ -244,14 +245,20 @@ def register_page(request: Request): return render(request, "register.html", acc
 def register_committee_page(request: Request): return render(request, "register.html", account_role="panitia", committee_divisions=COMMITTEE_DIVISIONS)
 
 @app.post("/register")
-def register(request: Request, nim: str = Form(...), name: str = Form(...), email: str = Form(...), role: str = Form("peserta"), committee_division: str = Form(""), study_program: str = Form("")):
+def register(request: Request, nim: str = Form(...), name: str = Form(...), email: str = Form(...), role: str = Form("peserta"), committee_division: str = Form(""), study_program: str = Form(""), access_token: str = Form("")):
     nim, name, email = nim.strip(), name.strip(), email.strip().lower()
     role = role if role in ("peserta", "panitia") else "peserta"
     committee_division = committee_division.strip()
     study_program = study_program.strip()
-    if role == "panitia" and committee_division not in COMMITTEE_DIVISIONS:
-        flash(request, "Pilih jabatan atau divisi panitia yang tersedia.", "error")
-        return RedirectResponse("/register-panitia", 303)
+    access_token = access_token.strip()
+
+    if role == "panitia":
+        if not secrets.compare_digest(access_token, COMMITTEE_ACCESS_TOKEN):
+            flash(request, "Token akses panitia tidak valid.", "error")
+            return RedirectResponse("/register-panitia", 303)
+        if committee_division not in COMMITTEE_DIVISIONS:
+            flash(request, "Pilih jabatan atau divisi panitia yang tersedia.", "error")
+            return RedirectResponse("/register-panitia", 303)
     if role == "peserta" and study_program not in STUDY_PROGRAMS:
         flash(request, "Pilih program studi yang tersedia.", "error")
         return RedirectResponse("/register", 303)
