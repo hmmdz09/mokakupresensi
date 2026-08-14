@@ -328,7 +328,9 @@ def admin_dashboard(request: Request):
         total = con.execute("SELECT COUNT(*) AS total FROM attendance").fetchone()["total"]
         recent = con.execute("""SELECT u.nim,u.name,s.name session_name,a.scanned_at FROM attendance a
           JOIN users u ON u.id=a.user_id JOIN sessions s ON s.id=a.session_id ORDER BY a.scanned_at DESC LIMIT 8""").fetchall()
-    return render(request, "admin.html", sessions=sessions, user_count=users, committee_count=committee, attendance_count=total, recent=recent)
+        all_users = con.execute("""SELECT u.*, COUNT(a.id) as scan_count FROM users u
+          LEFT JOIN attendance a ON a.user_id = u.id GROUP BY u.id ORDER BY u.id DESC""").fetchall()
+    return render(request, "admin.html", sessions=sessions, user_count=users, committee_count=committee, attendance_count=total, recent=recent, all_users=all_users)
 
 @app.post("/admin/reset-database")
 def reset_database(request: Request):
