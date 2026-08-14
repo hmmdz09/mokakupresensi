@@ -273,8 +273,9 @@ def register(request: Request, nim: str = Form(...), name: str = Form(...), emai
             cur = con.execute("INSERT INTO users(nim,name,email,password_hash,qr_nonce,created_at,role,committee_division,study_program) VALUES(?,?,?,?,?,?,?,?,?)",
                 (nim, name, email, "EMAIL_NIM_LOGIN", secrets.token_urlsafe(12), datetime.now().isoformat(timespec="seconds"), role, committee_division or None, study_program or None))
             request.session["participant_id"] = cur.lastrowid
-        flash(request, "Akun berhasil dibuat. QR presensi kamu sudah siap.")
-        return RedirectResponse("/participant", 303)
+        flash(request, f"Akun {role} berhasil dibuat! Silakan masuk.")
+        target_login = "/login-panitia" if role == "panitia" else "/login"
+        return RedirectResponse(target_login, 303)
     except DBIntegrityError:
         flash(request, "NIM atau email sudah terdaftar.", "error")
         return RedirectResponse(redirect_url, 303)
