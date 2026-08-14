@@ -248,6 +248,7 @@ def register_committee_page(request: Request): return render(request, "register.
 def register(request: Request, nim: str = Form(...), name: str = Form(...), email: str = Form(...), role: str = Form("peserta"), committee_division: str = Form(""), study_program: str = Form(""), access_token: str = Form("")):
     nim, name, email = nim.strip(), name.strip(), email.strip().lower()
     role = role if role in ("peserta", "panitia") else "peserta"
+    redirect_url = "/register-panitia" if role == "panitia" else "/register"
     committee_division = committee_division.strip()
     study_program = study_program.strip()
     access_token = access_token.strip()
@@ -266,7 +267,7 @@ def register(request: Request, nim: str = Form(...), name: str = Form(...), emai
     if role == "panitia": study_program = ""
     if not nim.isdigit() or len(nim) < 5:
         flash(request, "NIM harus berupa angka minimal 5 digit.", "error")
-        return RedirectResponse("/register", 303)
+        return RedirectResponse(redirect_url, 303)
     try:
         with db() as con:
             cur = con.execute("INSERT INTO users(nim,name,email,password_hash,qr_nonce,created_at,role,committee_division,study_program) VALUES(?,?,?,?,?,?,?,?,?)",
@@ -276,7 +277,7 @@ def register(request: Request, nim: str = Form(...), name: str = Form(...), emai
         return RedirectResponse("/participant", 303)
     except DBIntegrityError:
         flash(request, "NIM atau email sudah terdaftar.", "error")
-        return RedirectResponse("/register", 303)
+        return RedirectResponse(redirect_url, 303)
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request): return render(request, "login.html", login_role="peserta")
