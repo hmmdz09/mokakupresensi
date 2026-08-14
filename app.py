@@ -328,6 +328,26 @@ def admin_dashboard(request: Request):
           JOIN users u ON u.id=a.user_id JOIN sessions s ON s.id=a.session_id ORDER BY a.scanned_at DESC LIMIT 8""").fetchall()
     return render(request, "admin.html", sessions=sessions, user_count=users, committee_count=committee, attendance_count=total, recent=recent)
 
+@app.post("/admin/reset-database")
+def reset_database(request: Request):
+    if not is_admin(request): return RedirectResponse("/admin/login", 303)
+    with db() as con:
+        if USE_PG:
+            con.execute("TRUNCATE TABLE attendance, users RESTART IDENTITY CASCADE;")
+            con.execute("DELETE FROM sessions;")
+            for audience, name in (("peserta", "Kehadiran Peserta"), ("panitia", "Kehadiran Panitia")):
+                con.execute("INSERT INTO sessions(name,week,session_date,is_open,created_at,audience) VALUES(?,?,?,?,?,?)",
+                            (name, 1, date.today().isoformat(), 1, datetime.now().isoformat(timespec="seconds"), audience))
+        else:
+            con.execute("DELETE FROM attendance;")
+            con.execute("DELETE FROM users;")
+            con.execute("DELETE FROM sessions;")
+            for audience, name in (("peserta", "Kehadiran Peserta"), ("panitia", "Kehadiran Panitia")):
+                con.execute("INSERT INTO sessions(name,week,session_date,is_open,created_at,audience) VALUES(?,?,?,?,?,?)",
+                            (name, 1, date.today().isoformat(), 1, datetime.now().isoformat(timespec="seconds"), audience))
+    flash(request, "Database berhasil di-reset sepenuhnya!")
+    return RedirectResponse("/admin", 303)
+
 @app.post("/admin/session")
 def create_session(request: Request, name: str = Form(...), week: int = Form(...), session_date: str = Form(...), audience: str = Form("peserta")):
     if not is_admin(request): return RedirectResponse("/admin/login", 303)
