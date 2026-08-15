@@ -326,11 +326,11 @@ def admin_dashboard(request: Request):
         users = con.execute("SELECT COUNT(*) AS total FROM users WHERE role='peserta'").fetchone()["total"]
         committee = con.execute("SELECT COUNT(*) AS total FROM users WHERE role='panitia'").fetchone()["total"]
         total = con.execute("SELECT COUNT(*) AS total FROM attendance").fetchone()["total"]
-        recent = con.execute("""SELECT u.nim,u.name,s.name session_name,a.scanned_at FROM attendance a
-          JOIN users u ON u.id=a.user_id JOIN sessions s ON s.id=a.session_id ORDER BY a.scanned_at DESC LIMIT 8""").fetchall()
-        all_users = con.execute("""SELECT u.*, COUNT(a.id) as scan_count FROM users u
-          LEFT JOIN attendance a ON a.user_id = u.id GROUP BY u.id ORDER BY u.id DESC""").fetchall()
-    return render(request, "admin.html", sessions=sessions, user_count=users, committee_count=committee, attendance_count=total, recent=recent, all_users=all_users)
+        peserta_list = con.execute("""SELECT u.*, COUNT(a.id) as scan_count FROM users u
+          LEFT JOIN attendance a ON a.user_id = u.id WHERE u.role = 'peserta' GROUP BY u.id ORDER BY u.id DESC""").fetchall()
+        panitia_list = con.execute("""SELECT u.*, COUNT(a.id) as scan_count FROM users u
+          LEFT JOIN attendance a ON a.user_id = u.id WHERE u.role = 'panitia' GROUP BY u.id ORDER BY u.id DESC""").fetchall()
+    return render(request, "admin.html", sessions=sessions, user_count=users, committee_count=committee, attendance_count=total, recent=recent, peserta_list=peserta_list, panitia_list=panitia_list)
 
 @app.post("/admin/reset-database")
 def reset_database(request: Request):

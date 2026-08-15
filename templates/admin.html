@@ -7,34 +7,218 @@
 <div class="card span-4 metric"><b>{{ user_count }}</b><span>Peserta terdaftar</span></div><div class="card span-4 metric"><b>{{ committee_count }}</b><span>Panitia terdaftar</span></div><div class="card span-4 metric"><b>{{ attendance_count }}</b><span>Kehadiran tercatat</span></div>
 <section class="card span-12"><h2>Scanner Kehadiran</h2><div class="session-list">{% for s in sessions %}<div class="session"><div class="session-info"><b>{{ 'Mahasiswa Baru' if s.audience == 'peserta' else 'Panitia' }}</b><span>{{ s.attendance_count }} hadir</span></div><div class="session-actions"><a class="btn" href="/admin/scan/{{ s.id }}">Buka Scanner</a></div></div>{% endfor %}</div></section>
 <section class="card span-12"><h2>Kehadiran Terbaru</h2><div class="table-wrap"><table><thead><tr><th>NIM</th><th>Nama</th><th>Waktu</th></tr></thead><tbody>{% for row in recent %}<tr><td>{{ row.nim }}</td><td>{{ row.name }}</td><td>{{ row.scanned_at[11:19] }}</td></tr>{% else %}<tr><td colspan="3">Belum ada kehadiran.</td></tr>{% endfor %}</tbody></table></div></section>
-<section class="card span-12"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;"><h2>Daftar Semua Pendaftar</h2><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input type="text" id="userSearch" placeholder="Cari Nama / NIM / Email..." style="padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;font-size:14px;"><select id="userFilter" style="padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;font-size:14px;background:white;"><option value="all">Semua Data Pendaftar</option><option value="peserta">Hanya Peserta</option><option value="panitia">Hanya Panitia</option><option value="scanned">Sudah Di-scan</option><option value="unscanned">Belum Di-scan</option></select></div></div><div class="table-wrap"><table id="allUsersTable"><thead><tr><th>NIM</th><th>Nama</th><th>Email</th><th>Jenis Akun</th><th>Prodi / Divisi</th><th>Status Presensi</th><th>Aksi</th></tr></thead><tbody>{% for u in all_users %}<tr data-role="{{ u.role }}" data-scanned="{{ 'true' if u.scan_count > 0 else 'false' }}"><td><b>{{ u.nim }}</b></td><td>{{ u.name }}</td><td>{{ u.email }}</td><td><span style="padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;{{ 'background:#dbeafe;color:#1e40af;' if u.role == 'peserta' else 'background:#fef3c7;color:#92400e;' }}">{{ u.role|upper }}</span></td><td>{{ u.study_program or u.committee_division or '-' }}</td><td>{% if u.scan_count > 0 %}<span style="padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;background:#dcfce7;color:#166534;">✓ Sudah Scan ({{ u.scan_count }})</span>{% else %}<span style="padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;background:#fee2e2;color:#991b1b;">✕ Belum Scan</span>{% endif %}</td><td><form method="post" action="/admin/user/{{ u.id }}/delete" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data {{ u.name }} (NIM: {{ u.nim }})?');" style="display:inline;"><button class="btn" style="padding:2px 8px;font-size:12px;background:#dc2626;color:white;border-color:#b91c1c;">Hapus</button></form></td></tr>{% else %}<tr><td colspan="7" style="text-align:center;">Belum ada pendaftar.</td></tr>{% endfor %}</tbody></table></div></section>
+
+<!-- SECTION 1: DAFTAR PESERTA -->
+<section class="card span-12">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+    <h2>Daftar Peserta (Mahasiswa Baru)</h2>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <input type="text" id="pesertaSearch" placeholder="Cari Nama / NIM / Email Peserta..." style="padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;font-size:14px;width:240px;">
+      <select id="pesertaFilter" style="padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;font-size:14px;background:white;">
+        <option value="all">Semua Presensi</option>
+        <option value="scanned">Sudah Scan</option>
+        <option value="unscanned">Belum Scan</option>
+      </select>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table id="pesertaTable">
+      <thead>
+        <tr>
+          <th>NIM</th>
+          <th>Nama</th>
+          <th>Email</th>
+          <th>Program Studi</th>
+          <th>Status Presensi</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in peserta_list %}
+        <tr data-scanned="{{ 'true' if u.scan_count > 0 else 'false' }}">
+          <td><b>{{ u.nim }}</b></td>
+          <td>{{ u.name }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.study_program or '-' }}</td>
+          <td>
+            {% if u.scan_count > 0 %}
+            <span style="padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;background:#dcfce7;color:#166534;">✓ Sudah Scan ({{ u.scan_count }})</span>
+            {% else %}
+            <span style="padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;background:#fee2e2;color:#991b1b;">✕ Belum Scan</span>
+            {% endif %}
+          </td>
+          <td>
+            <form method="post" action="/admin/user/{{ u.id }}/delete" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data peserta {{ u.name }} (NIM: {{ u.nim }})?');" style="display:inline;">
+              <button class="btn" style="padding:2px 8px;font-size:12px;background:#dc2626;color:white;border-color:#b91c1c;">Hapus</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;">Belum ada peserta terdaftar.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div id="pesertaPagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:12px;">
+    <span id="pesertaInfo" style="font-size:14px;color:#64748b;">Menampilkan 0 dari 0 data</span>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button id="pesertaPrev" class="btn" style="padding:4px 10px;font-size:13px;">◀ Sebelum</button>
+      <span id="pesertaPageText" style="font-size:14px;font-weight:600;padding:0 8px;">Hal 1 / 1</span>
+      <button id="pesertaNext" class="btn" style="padding:4px 10px;font-size:13px;">Selanjutnya ▶</button>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: DAFTAR PANITIA -->
+<section class="card span-12">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+    <h2>Daftar Panitia MOKAKU 2026</h2>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <input type="text" id="panitiaSearch" placeholder="Cari Nama / NIM / Email Panitia..." style="padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;font-size:14px;width:240px;">
+      <select id="panitiaFilter" style="padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;font-size:14px;background:white;">
+        <option value="all">Semua Presensi</option>
+        <option value="scanned">Sudah Scan</option>
+        <option value="unscanned">Belum Scan</option>
+      </select>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table id="panitiaTable">
+      <thead>
+        <tr>
+          <th>NIM</th>
+          <th>Nama</th>
+          <th>Email</th>
+          <th>Divisi Panitia</th>
+          <th>Status Presensi</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in panitia_list %}
+        <tr data-scanned="{{ 'true' if u.scan_count > 0 else 'false' }}">
+          <td><b>{{ u.nim }}</b></td>
+          <td>{{ u.name }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.committee_division or '-' }}</td>
+          <td>
+            {% if u.scan_count > 0 %}
+            <span style="padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;background:#dcfce7;color:#166534;">✓ Sudah Scan ({{ u.scan_count }})</span>
+            {% else %}
+            <span style="padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;background:#fee2e2;color:#991b1b;">✕ Belum Scan</span>
+            {% endif %}
+          </td>
+          <td>
+            <form method="post" action="/admin/user/{{ u.id }}/delete" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data panitia {{ u.name }} (NIM: {{ u.nim }})?');" style="display:inline;">
+              <button class="btn" style="padding:2px 8px;font-size:12px;background:#dc2626;color:white;border-color:#b91c1c;">Hapus</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;">Belum ada panitia terdaftar.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div id="panitiaPagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:12px;">
+    <span id="panitiaInfo" style="font-size:14px;color:#64748b;">Menampilkan 0 dari 0 data</span>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button id="panitiaPrev" class="btn" style="padding:4px 10px;font-size:13px;">◀ Sebelum</button>
+      <span id="panitiaPageText" style="font-size:14px;font-weight:600;padding:0 8px;">Hal 1 / 1</span>
+      <button id="panitiaNext" class="btn" style="padding:4px 10px;font-size:13px;">Selanjutnya ▶</button>
+    </div>
+  </div>
+</section>
+
 </div></div></main>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const searchInput = document.getElementById('userSearch');
-  const filterSelect = document.getElementById('userFilter');
-  const tableRows = document.querySelectorAll('#allUsersTable tbody tr');
-  function filterUsers() {
-    const query = searchInput.value.toLowerCase().trim();
-    const filter = filterSelect.value;
-    tableRows.forEach(row => {
-      if (!row.getAttribute('data-role')) return;
+function initPaginatedTable(config) {
+  const searchInput = document.getElementById(config.searchId);
+  const filterSelect = document.getElementById(config.filterId);
+  const tableRows = Array.from(document.querySelectorAll('#' + config.tableId + ' tbody tr'));
+  const prevBtn = document.getElementById(config.prevBtnId);
+  const nextBtn = document.getElementById(config.nextBtnId);
+  const pageText = document.getElementById(config.pageTextId);
+  const infoText = document.getElementById(config.infoId);
+
+  const pageSize = 50;
+  let currentPage = 1;
+  let filteredRows = [];
+
+  function applyFilter() {
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const filter = filterSelect ? filterSelect.value : 'all';
+
+    filteredRows = tableRows.filter(row => {
+      if (!row.getAttribute('data-scanned')) return false;
       const text = row.textContent.toLowerCase();
-      const role = row.getAttribute('data-role');
       const isScanned = row.getAttribute('data-scanned') === 'true';
+
       let matchesFilter = true;
-      if (filter === 'peserta') matchesFilter = (role === 'peserta');
-      else if (filter === 'panitia') matchesFilter = (role === 'panitia');
-      else if (filter === 'scanned') matchesFilter = isScanned;
+      if (filter === 'scanned') matchesFilter = isScanned;
       else if (filter === 'unscanned') matchesFilter = !isScanned;
+
       let matchesSearch = text.includes(query);
-      row.style.display = (matchesFilter && matchesSearch) ? '' : 'none';
+      return matchesFilter && matchesSearch;
     });
+
+    currentPage = 1;
+    renderPage();
   }
-  if (searchInput && filterSelect) {
-    searchInput.addEventListener('input', filterUsers);
-    filterSelect.addEventListener('change', filterUsers);
+
+  function renderPage() {
+    const totalItems = filteredRows.length;
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const startIdx = (currentPage - 1) * pageSize;
+    const endIdx = startIdx + pageSize;
+
+    tableRows.forEach(row => row.style.display = 'none');
+    filteredRows.slice(startIdx, endIdx).forEach(row => row.style.display = '');
+
+    const displayStart = totalItems === 0 ? 0 : startIdx + 1;
+    const displayEnd = Math.min(endIdx, totalItems);
+    if (infoText) infoText.textContent = `Menampilkan ${displayStart}–${displayEnd} dari ${totalItems} data`;
+    if (pageText) pageText.textContent = `Hal ${currentPage} / ${totalPages}`;
+
+    if (prevBtn) prevBtn.disabled = (currentPage <= 1);
+    if (nextBtn) nextBtn.disabled = (currentPage >= totalPages);
   }
+
+  if (prevBtn) prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderPage(); } });
+  if (nextBtn) nextBtn.addEventListener('click', () => {
+    const totalPages = Math.ceil(filteredRows.length / pageSize) || 1;
+    if (currentPage < totalPages) { currentPage++; renderPage(); }
+  });
+
+  if (searchInput) searchInput.addEventListener('input', applyFilter);
+  if (filterSelect) filterSelect.addEventListener('change', applyFilter);
+
+  applyFilter();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initPaginatedTable({
+    tableId: 'pesertaTable',
+    searchId: 'pesertaSearch',
+    filterId: 'pesertaFilter',
+    prevBtnId: 'pesertaPrev',
+    nextBtnId: 'pesertaNext',
+    pageTextId: 'pesertaPageText',
+    infoId: 'pesertaInfo'
+  });
+
+  initPaginatedTable({
+    tableId: 'panitiaTable',
+    searchId: 'panitiaSearch',
+    filterId: 'panitiaFilter',
+    prevBtnId: 'panitiaPrev',
+    nextBtnId: 'panitiaNext',
+    pageTextId: 'panitiaPageText',
+    infoId: 'panitiaInfo'
+  });
 });
 </script>
 {% endblock %}
