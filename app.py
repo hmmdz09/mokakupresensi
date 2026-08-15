@@ -352,6 +352,18 @@ def reset_database(request: Request):
     flash(request, "Database berhasil di-reset sepenuhnya!")
     return RedirectResponse("/admin", 303)
 
+@app.post("/admin/user/{user_id}/delete")
+def delete_user(user_id: int, request: Request):
+    if not is_admin(request): return RedirectResponse("/admin/login", 303)
+    with db() as con:
+        user = con.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+        if user:
+            con.execute("DELETE FROM users WHERE id=?", (user_id,))
+            flash(request, f"Data {user['role']} {user['name']} ({user['nim']}) berhasil dihapus.")
+        else:
+            flash(request, "Data pendaftar tidak ditemukan.", "error")
+    return RedirectResponse("/admin", 303)
+
 @app.post("/admin/session")
 def create_session(request: Request, name: str = Form(...), week: int = Form(...), session_date: str = Form(...), audience: str = Form("peserta")):
     if not is_admin(request): return RedirectResponse("/admin/login", 303)
