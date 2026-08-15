@@ -5,13 +5,97 @@
 <div class="page-head"><div><span class="eyebrow" style="color:var(--blue)">ADMIN</span><h1 class="page-title">Presensi MOKAKU Fakultas 2026</h1></div><div class="actions"><a class="btn" href="/admin/export-peserta.xlsx">Excel Peserta</a><a class="btn" href="/admin/export-panitia.xlsx">Excel Panitia</a><form method="post" action="/admin/reset-database" onsubmit="return confirm('APAKAH ANDA YAKIN? Semua data peserta, panitia, dan presensi ujicoba akan DIHAPUS BERSIH.');" style="display:inline;"><button class="btn" style="background:#dc2626;color:white;border-color:#b91c1c;">Reset Database</button></form></div></div>
 <div class="grid">
 <div class="card span-4 metric"><b>{{ user_count }}</b><span>Peserta terdaftar</span></div><div class="card span-4 metric"><b>{{ committee_count }}</b><span>Panitia terdaftar</span></div><div class="card span-4 metric"><b>{{ attendance_count }}</b><span>Kehadiran tercatat</span></div>
-<section class="card span-12"><h2>Scanner Kehadiran</h2><div class="session-list">{% for s in sessions %}<div class="session"><div class="session-info"><b>{{ 'Mahasiswa Baru' if s.audience == 'peserta' else 'Panitia' }}</b><span>{{ s.attendance_count }} hadir</span></div><div class="session-actions"><a class="btn" href="/admin/scan/{{ s.id }}">Buka Scanner</a></div></div>{% endfor %}</div></section>
-<section class="card span-12"><h2>Kehadiran Terbaru</h2><div class="table-wrap"><table><thead><tr><th>NIM</th><th>Nama</th><th>Waktu</th></tr></thead><tbody>{% for row in recent %}<tr><td>{{ row.nim }}</td><td>{{ row.name }}</td><td>{{ row.scanned_at[11:19] }}</td></tr>{% else %}<tr><td colspan="3">Belum ada kehadiran.</td></tr>{% endfor %}</tbody></table></div></section>
 
-<!-- SECTION 1: DAFTAR PESERTA -->
+<section class="card span-12"><h2>Scanner Kehadiran</h2><div class="session-list">{% for s in sessions %}<div class="session"><div class="session-info"><b>{{ 'Mahasiswa Baru' if s.audience == 'peserta' else 'Panitia' }}</b><span>{{ s.attendance_count }} hadir</span></div><div class="session-actions"><a class="btn" href="/admin/scan/{{ s.id }}">Buka Scanner</a></div></div>{% endfor %}</div></section>
+
+<!-- SECTION 1: KEHADIRAN PESERTA -->
 <section class="card span-12">
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-    <h2>Daftar Peserta (Mahasiswa Baru)</h2>
+    <h2>Riwayat Kehadiran Peserta (Mahasiswa Baru)</h2>
+    <input type="text" id="attPesertaSearch" placeholder="Cari Nama / NIM Peserta..." style="padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;font-size:14px;width:240px;">
+  </div>
+  <div class="table-wrap">
+    <table id="attPesertaTable">
+      <thead>
+        <tr>
+          <th>NIM</th>
+          <th>Nama</th>
+          <th>Program Studi</th>
+          <th>Sesi Presensi</th>
+          <th>Waktu Scan</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in recent_peserta %}
+        <tr>
+          <td><b>{{ row.nim }}</b></td>
+          <td>{{ row.name }}</td>
+          <td>{{ row.study_program or '-' }}</td>
+          <td>{{ row.session_name }}</td>
+          <td>{{ row.scanned_at[11:19] if row.scanned_at else '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;">Belum ada kehadiran peserta.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:12px;">
+    <span id="attPesertaInfo" style="font-size:14px;color:#64748b;">Menampilkan 0 data</span>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button id="attPesertaPrev" class="btn" style="padding:4px 10px;font-size:13px;">◀ Sebelum</button>
+      <span id="attPesertaPageText" style="font-size:14px;font-weight:600;padding:0 8px;">Hal 1 / 1</span>
+      <button id="attPesertaNext" class="btn" style="padding:4px 10px;font-size:13px;">Selanjutnya ▶</button>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: KEHADIRAN PANITIA -->
+<section class="card span-12">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+    <h2>Riwayat Kehadiran Panitia MOKAKU 2026</h2>
+    <input type="text" id="attPanitiaSearch" placeholder="Cari Nama / NIM Panitia..." style="padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;font-size:14px;width:240px;">
+  </div>
+  <div class="table-wrap">
+    <table id="attPanitiaTable">
+      <thead>
+        <tr>
+          <th>NIM</th>
+          <th>Nama</th>
+          <th>Divisi Panitia</th>
+          <th>Sesi Presensi</th>
+          <th>Waktu Scan</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in recent_panitia %}
+        <tr>
+          <td><b>{{ row.nim }}</b></td>
+          <td>{{ row.name }}</td>
+          <td>{{ row.committee_division or '-' }}</td>
+          <td>{{ row.session_name }}</td>
+          <td>{{ row.scanned_at[11:19] if row.scanned_at else '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;">Belum ada kehadiran panitia.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:12px;">
+    <span id="attPanitiaInfo" style="font-size:14px;color:#64748b;">Menampilkan 0 data</span>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button id="attPanitiaPrev" class="btn" style="padding:4px 10px;font-size:13px;">◀ Sebelum</button>
+      <span id="attPanitiaPageText" style="font-size:14px;font-weight:600;padding:0 8px;">Hal 1 / 1</span>
+      <button id="attPanitiaNext" class="btn" style="padding:4px 10px;font-size:13px;">Selanjutnya ▶</button>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: DAFTAR PESERTA TERDAFTAR -->
+<section class="card span-12">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+    <h2>Daftar Peserta Terdaftar (Mahasiswa Baru)</h2>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <input type="text" id="pesertaSearch" placeholder="Cari Nama / NIM / Email Peserta..." style="padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;font-size:14px;width:240px;">
       <select id="pesertaFilter" style="padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;font-size:14px;background:white;">
@@ -59,8 +143,8 @@
       </tbody>
     </table>
   </div>
-  <div id="pesertaPagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:12px;">
-    <span id="pesertaInfo" style="font-size:14px;color:#64748b;">Menampilkan 0 dari 0 data</span>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:12px;">
+    <span id="pesertaInfo" style="font-size:14px;color:#64748b;">Menampilkan 0 data</span>
     <div style="display:flex;gap:6px;align-items:center;">
       <button id="pesertaPrev" class="btn" style="padding:4px 10px;font-size:13px;">◀ Sebelum</button>
       <span id="pesertaPageText" style="font-size:14px;font-weight:600;padding:0 8px;">Hal 1 / 1</span>
@@ -69,10 +153,10 @@
   </div>
 </section>
 
-<!-- SECTION 2: DAFTAR PANITIA -->
+<!-- SECTION 4: DAFTAR PANITIA TERDAFTAR -->
 <section class="card span-12">
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-    <h2>Daftar Panitia MOKAKU 2026</h2>
+    <h2>Daftar Panitia Terdaftar (Panitia MOKAKU 2026)</h2>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <input type="text" id="panitiaSearch" placeholder="Cari Nama / NIM / Email Panitia..." style="padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;font-size:14px;width:240px;">
       <select id="panitiaFilter" style="padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;font-size:14px;background:white;">
@@ -120,8 +204,8 @@
       </tbody>
     </table>
   </div>
-  <div id="panitiaPagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:12px;">
-    <span id="panitiaInfo" style="font-size:14px;color:#64748b;">Menampilkan 0 dari 0 data</span>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:12px;">
+    <span id="panitiaInfo" style="font-size:14px;color:#64748b;">Menampilkan 0 data</span>
     <div style="display:flex;gap:6px;align-items:center;">
       <button id="panitiaPrev" class="btn" style="padding:4px 10px;font-size:13px;">◀ Sebelum</button>
       <span id="panitiaPageText" style="font-size:14px;font-weight:600;padding:0 8px;">Hal 1 / 1</span>
@@ -151,14 +235,14 @@ function initPaginatedTable(config) {
     const filter = filterSelect ? filterSelect.value : 'all';
 
     filteredRows = tableRows.filter(row => {
-      if (!row.getAttribute('data-scanned')) return false;
       const text = row.textContent.toLowerCase();
-      const isScanned = row.getAttribute('data-scanned') === 'true';
-
       let matchesFilter = true;
-      if (filter === 'scanned') matchesFilter = isScanned;
-      else if (filter === 'unscanned') matchesFilter = !isScanned;
-
+      if (filterSelect) {
+        if (!row.getAttribute('data-scanned')) return false;
+        const isScanned = row.getAttribute('data-scanned') === 'true';
+        if (filter === 'scanned') matchesFilter = isScanned;
+        else if (filter === 'unscanned') matchesFilter = !isScanned;
+      }
       let matchesSearch = text.includes(query);
       return matchesFilter && matchesSearch;
     });
@@ -200,6 +284,24 @@ function initPaginatedTable(config) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  initPaginatedTable({
+    tableId: 'attPesertaTable',
+    searchId: 'attPesertaSearch',
+    prevBtnId: 'attPesertaPrev',
+    nextBtnId: 'attPesertaNext',
+    pageTextId: 'attPesertaPageText',
+    infoId: 'attPesertaInfo'
+  });
+
+  initPaginatedTable({
+    tableId: 'attPanitiaTable',
+    searchId: 'attPanitiaSearch',
+    prevBtnId: 'attPanitiaPrev',
+    nextBtnId: 'attPanitiaNext',
+    pageTextId: 'attPanitiaPageText',
+    infoId: 'attPanitiaInfo'
+  });
+
   initPaginatedTable({
     tableId: 'pesertaTable',
     searchId: 'pesertaSearch',
