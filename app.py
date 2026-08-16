@@ -351,6 +351,17 @@ def reset_database(request: Request):
     flash(request, "Database berhasil di-reset sepenuhnya!")
     return RedirectResponse("/admin", 303)
 
+@app.post("/admin/reset-attendance")
+def reset_attendance(request: Request):
+    if not is_admin(request): return RedirectResponse("/admin/login", 303)
+    with db() as con:
+        if USE_PG:
+            con.execute("TRUNCATE TABLE attendance RESTART IDENTITY CASCADE;")
+        else:
+            con.execute("DELETE FROM attendance;")
+    flash(request, "Seluruh riwayat kehadiran berhasil di-reset (data akun pendaftar tetap utuh).")
+    return RedirectResponse("/admin", 303)
+
 @app.post("/admin/user/{user_id}/delete")
 def delete_user(user_id: int, request: Request):
     if not is_admin(request): return RedirectResponse("/admin/login", 303)
